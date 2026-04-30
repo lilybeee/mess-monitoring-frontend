@@ -114,7 +114,7 @@ const UserDashboard = () => {
                                             color: 'var(--color-dark-blue)',
                                             fontWeight: 600
                                         }}
-                                        formatter={(value: number) => [`${value}`, 'people']}
+                                        formatter={(value?: number) => [`${value ?? 0}`, 'people']}
                                     />
                                     <Line
                                         type="monotone"
