@@ -295,14 +295,7 @@ const AdminDashboard = () => {
                     </div>
                 </section>
 
-                <section className="card">
-                    <div className="grid md:grid-cols-2 gap-8"></div>
-                    <div className="mt-8 pt-6">
-                        <button className="btn" style={{ padding: '1rem 2rem' }} onClick={() => alert('Opening Historical Data Modal/Page...')}>
-                            View Historical Data
-                        </button>
-                    </div>
-                </section>
+
 
             </main>
         </div>
