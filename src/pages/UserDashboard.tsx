@@ -18,10 +18,21 @@ interface TrafficPoint {
     people: number;
 }
 
+interface PredictionResult {
+    predicted_people: number;
+    for_time: string;
+    meal_slot: string;
+}
+
 const UserDashboard = () => {
     const navigate = useNavigate();
     const { currentPeople, mealType, dayStatus, menu, connected } = useDashboard();
     const [graphData, setGraphData] = useState<TrafficPoint[]>([]);
+
+    // Prediction state
+    const [prediction, setPrediction] = useState<PredictionResult | null>(null);
+    const [predicting, setPredicting] = useState(false);
+    const [predictionError, setPredictionError] = useState<string | null>(null);
 
     // Fetch traffic history once on mount, then refresh every 2 minutes
     useEffect(() => {
@@ -44,6 +55,29 @@ const UserDashboard = () => {
 
     const handleLogout = () => {
         navigate('/login');
+    };
+
+    const handlePredict = async () => {
+        setPredicting(true);
+        setPrediction(null);
+        setPredictionError(null);
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/predict`);
+            if (res.ok) {
+                const data: PredictionResult = await res.json();
+                setPrediction(data);
+            } else if (res.status === 400) {
+                // Outside meal slot window
+                const err = await res.json();
+                setPredictionError(err.detail ?? 'No active meal slot right now.');
+            } else {
+                setPredictionError('Prediction unavailable. Please try again later.');
+            }
+        } catch {
+            setPredictionError('Could not reach the server.');
+        } finally {
+            setPredicting(false);
+        }
     };
 
     return (
@@ -71,6 +105,68 @@ const UserDashboard = () => {
                         {/* Live indicator */}
                         <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: connected ? '#22c55e' : '#9ca3af' }}>
                             {connected ? '● Live' : '○ Reconnecting...'}
+                        </div>
+
+                        {/* ── Predict Button ── */}
+                        <div style={{ marginTop: '1.5rem', width: '100%' }}>
+                            <button
+                                onClick={handlePredict}
+                                disabled={predicting}
+                                className="btn btn-outline"
+                                style={{
+                                    width: '100%',
+                                    padding: '0.6rem 1rem',
+                                    fontSize: '0.95rem',
+                                    opacity: predicting ? 0.6 : 1,
+                                    cursor: predicting ? 'not-allowed' : 'pointer',
+                                }}
+                            >
+                                {predicting ? 'Predicting...' : 'Predict Next 5 Minutes'}
+                            </button>
+
+                            {/* Prediction result */}
+                            {prediction && (
+                                <div style={{
+                                    marginTop: '1rem',
+                                    padding: '0.75rem 1rem',
+                                    backgroundColor: '#f0f4ff',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--color-dark-blue)',
+                                    fontSize: '0.95rem',
+                                    textAlign: 'center',
+                                }}>
+                                    <span style={{ fontWeight: 600 }}>Expected at {prediction.for_time}:</span>
+                                    <span style={{
+                                        display: 'block',
+                                        fontSize: '2rem',
+                                        fontWeight: 700,
+                                        color: 'var(--color-dark-blue)',
+                                        lineHeight: 1.2,
+                                        marginTop: '0.25rem',
+                                    }}>
+                                        {prediction.predicted_people} people
+                                    </span>
+                                    <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>
+                                        during {prediction.meal_slot}
+                                    </span>
+                                </div>
+                            )}
+
+                            {/* Error state */}
+                            {predictionError && (
+                                <div style={{
+                                    marginTop: '1rem',
+                                    padding: '0.75rem 1rem',
+                                    backgroundColor: '#fff0f0',
+                                    borderRadius: '8px',
+                                    border: '1px solid #f87171',
+                                    fontSize: '0.9rem',
+                                    color: '#b91c1c',
+                                    textAlign: 'center',
+                                }}>
+                                    {predictionError}
+                                </div>
+                            )}
                         </div>
                     </div>
 
